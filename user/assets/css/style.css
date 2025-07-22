@@ -1,0 +1,50 @@
+/*--------------------------------------------------------------
+# CSS
+--------------------------------------------------------------*/
+#rfid-form {
+    position: absolute;
+    left: -9999px;
+    width: 0;
+    opacity: 0;
+}
+
+.sidebar .nav-header {
+    color: rgb(0, 255, 42);
+}
+
+/* .main-sidebar {
+    background: linear-gradient(rgb(0, 0, 0), rgb(2, 97, 2));
+} */
+
+
+body,
+.content-wrapper {
+    padding-top: 25px;
+}
+
+.content-wrapper {
+    margin-top: 15px;
+    padding: 10px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+
+.btn-custom {
+    width: 100px;
+}
+
+.no-space {
+    margin: 0;
+    padding: 0;
+}
+
+
+.main-header {
+    background: linear-gradient(rgb(0, 0, 0), rgb(2, 97, 2));
+    color: #fff;
+}
+
+.nav-treeview .nav-item {
+    padding-left: 20px;
+}
