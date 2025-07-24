@@ -1,11 +1,13 @@
 <?php
+session_start();
 include 'db_connect.php';
-include 'header.php';
 
 if (!isset($_SESSION['login_id'])) {
     header("Location: ../index.php");
     exit;
 }
+
+include 'header.php';
 
 function fetchAll($conn, $table)
 {
@@ -17,6 +19,7 @@ function formatColumnName($column)
 {
     return ucwords(str_replace('_', ' ', $column));
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -30,6 +33,7 @@ function formatColumnName($column)
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
 </head>
 
 <body class="hold-transition layout-fixed">
@@ -80,12 +84,9 @@ function formatColumnName($column)
                                                 $columns = array_keys($records[0]);
                                                 $orderedColumns = [];
 
-                                                // Always show 'id' first if present
                                                 if (in_array('id', $columns)) {
                                                     $orderedColumns[] = 'id';
                                                 }
-
-                                                // Then book_no and page_no
                                                 if (in_array('book_no', $columns)) {
                                                     $orderedColumns[] = 'book_no';
                                                 }
@@ -93,21 +94,17 @@ function formatColumnName($column)
                                                     $orderedColumns[] = 'page_no';
                                                 }
 
-                                                // Then the rest (skipping ones already added)
                                                 foreach ($columns as $col) {
                                                     if (!in_array($col, $orderedColumns)) {
                                                         $orderedColumns[] = $col;
                                                     }
                                                 }
 
-                                                // Output headers
                                                 foreach ($orderedColumns as $col) {
                                                     echo "<th>" . htmlspecialchars(formatColumnName($col)) . "</th>";
                                                 }
                                             }
-
                                             ?>
-
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -129,19 +126,18 @@ function formatColumnName($column)
             <i class='bi bi-trash'></i> Delete
         </button>
         <button class='btn btn-sm btn-success generate-cert-btn' 
-                data-id='$id'>
+                data-id='$id' 
+                data-table='$tableName'>
             <i class='bi bi-file-earmark-pdf'></i> PDF
         </button>
     </div>
 </td>";
-
 
                                             foreach ($orderedColumns as $col) {
                                                 echo "<td>" . htmlspecialchars($row[$col] ?? '') . "</td>";
                                             }
                                             echo "</tr>";
                                         }
-
                                         ?>
                                     </tbody>
                                 </table>
@@ -175,8 +171,8 @@ function formatColumnName($column)
 
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['table']) && isset($_POST['id'])) {
-        $table = $_POST['table'];
-        $id = $_POST['id'];
+        $table = $conn->real_escape_string($_POST['table']);
+        $id = $conn->real_escape_string($_POST['id']);
         unset($_POST['table'], $_POST['id']);
 
         $updates = [];
@@ -189,8 +185,10 @@ function formatColumnName($column)
         $conn->query($sql);
 
         echo "<script>window.location='view_data.php';</script>";
+        exit;
     }
     ?>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -257,8 +255,6 @@ function formatColumnName($column)
                 new bootstrap.Modal(document.getElementById('editModal')).show();
             });
 
-
-
             $(document).on('click', '.delete-btn', function() {
                 const id = $(this).attr('data-id');
                 const table = $(this).attr('data-table');
@@ -285,13 +281,11 @@ function formatColumnName($column)
                 });
             });
 
+            // Open PDF generation in new tab using separate script
             $(document).on('click', '.generate-cert-btn', function() {
-                Swal.fire({
-                    title: 'Placeholder',
-                    text: 'This is a placeholder for generating certificates.',
-                    icon: 'info',
-                    confirmButtonText: 'OK'
-                });
+                const id = $(this).data('id');
+                const table = $(this).data('table');
+                window.open(`generate_pdf.php?table=${table}&id=${id}`, '_blank');
             });
         });
     </script>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About | Parish Matalom Records Management System</title>
+    <title>About | St. Joseph Parish Records Management System</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="about.css">
@@ -15,7 +15,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fs-4" href="index.php">Parish Matalom</a>
+            <a class="navbar-brand fs-4" href="index.php">St. Joseph Parish</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -34,7 +34,7 @@
     <!-- Hero Section -->
     <div class="hero">
         <div class="hero-content">
-            <h1>Saint Joseph Parish Church, Matalom</h1>
+            <h1>St. Joseph Parish. Matalom, Leyte</h1>
             <p>
                 Established in the 1800s, Saint Joseph Parish Church stands as a spiritual beacon and a symbol of Matalom's rich cultural heritage. Its iconic bell tower and sea-side setting make it a sanctuary of faith and tradition.
             </p>
