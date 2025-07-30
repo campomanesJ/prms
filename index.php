@@ -61,7 +61,10 @@
     <div class="container">
         <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
             <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-2" />
-            St. Joseph Parish
+            <div class="d-flex flex-column lh-1">
+                <span class="text-white fw-bold mb-1">St. Joseph Parish</span>
+                <small class="text-white-50" style="font-size: 0.85rem;">Matalom, Leyte</small>
+            </div>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -77,6 +80,7 @@
         </div>
     </div>
 </nav>
+
 
 
     <!-- Hero Section -->

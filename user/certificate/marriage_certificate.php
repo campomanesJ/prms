@@ -1,20 +1,20 @@
 <?php
 session_start();
-include 'db_connect.php';
+include '../db_connect.php';
 
 if (!isset($_SESSION['login_id'])) {
     header("Location: ../index.php");
     exit;
 }
 
-require_once('../tcpdf/tcpdf.php');
+require_once('../../tcpdf/tcpdf.php');
 
-if (!isset($_GET['id'], $_GET['table'])) {
-    die("Missing parameters.");
+if (!isset($_GET['id'])) {
+    die("Missing ID parameter.");
 }
 
 $id = $conn->real_escape_string($_GET['id']);
-$table = $conn->real_escape_string($_GET['table']);
+$table = 'marriage_tbl';
 
 $result = $conn->query("SELECT * FROM `$table` WHERE id = '$id'");
 
@@ -29,12 +29,12 @@ function formatColumnName($column)
     return ucwords(str_replace('_', ' ', $column));
 }
 
-$type = ucfirst(str_replace('_tbl', '', $table));
+$type = 'Marriage';
 $title = $type . ' Certificate';
 
 // Custom half-legal size landscape (7" x 8.5" in mm)
-$pageWidth = 178;  // 7 inches in mm
-$pageHeight = 216; // 8.5 inches in mm
+$pageWidth = 178;
+$pageHeight = 216;
 
 $pdf = new TCPDF('L', 'mm', [$pageWidth, $pageHeight]);
 $pdf->SetCreator(PDF_CREATOR);
@@ -50,18 +50,7 @@ foreach ($data as $key => $value) {
 
 $pdf->writeHTML($html, true, false, true, false, '');
 
-// Determine full name for filename
-$lowerType = strtolower($type);
-
-if (in_array($lowerType, ['baptism', 'death', 'confirmation'])) {
-    $firstName = isset($data['first_name']) ? $data['first_name'] : (isset($data['firstname']) ? $data['firstname'] : '');
-    $lastName = isset($data['last_name']) ? $data['last_name'] : (isset($data['lastname']) ? $data['lastname'] : '');
-    $fullNameRaw = trim($firstName . $lastName) !== '' ? $firstName . $lastName : 'UnknownName';
-} elseif ($lowerType === 'marriage') {
-    $fullNameRaw = isset($data['husband_name']) ? $data['husband_name'] : 'UnknownName';
-} else {
-    $fullNameRaw = isset($data['full_name']) ? $data['full_name'] : 'UnknownName';
-}
+$fullNameRaw = $data['husband_name'] ?? 'UnknownName';
 
 $fullName = preg_replace('/[^A-Za-z0-9]/', '', $fullNameRaw);
 $dateString = date('mdY');

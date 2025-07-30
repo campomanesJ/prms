@@ -63,6 +63,13 @@ function formatColumnName($column)
                         'marriage' => 'marriage_tbl'
                     ];
 
+                    $certificateFiles = [
+                        'baptism' => 'baptism_certificate.php',
+                        'confirmation' => 'confirmation_certificate.php',
+                        'death' => 'death_certificate.php',
+                        'marriage' => 'marriage_certificate.php'
+                    ];
+
                     $isFirst = true;
                     foreach ($tables as $key => $tableName):
                         $records = fetchAll($conn, $tableName);
@@ -114,6 +121,8 @@ function formatColumnName($column)
                                         <?php
                                         foreach ($records as $row) {
                                             $id = $row['id'];
+                                            $certFile = $certificateFiles[$key] ?? '#'; // fallback if none set
+
                                             echo "<tr>";
                                             echo "<td style='width:220px; min-width:220px;'>
     <div class='d-flex gap-1'>
@@ -128,10 +137,9 @@ function formatColumnName($column)
                 data-table='$tableName'>
             <i class='bi bi-trash'></i> Delete
         </button>
-        <button class='btn btn-sm btn-success generate-cert-btn' 
-                data-id='$id'>
+        <a class='btn btn-sm btn-success' href='{$certFile}?id={$id}' target='_blank' title='Generate PDF'>
             <i class='bi bi-file-earmark-pdf'></i> PDF
-        </button>
+        </a>
     </div>
 </td>";
 
@@ -285,14 +293,7 @@ function formatColumnName($column)
                 });
             });
 
-            $(document).on('click', '.generate-cert-btn', function() {
-                Swal.fire({
-                    title: 'Placeholder',
-                    text: 'This is a placeholder for generating certificates.',
-                    icon: 'info',
-                    confirmButtonText: 'OK'
-                });
-            });
+            // Removed the old placeholder PDF button handler
         });
     </script>
 

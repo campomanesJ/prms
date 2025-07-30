@@ -108,24 +108,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand fs-4" href="index.php">St. Joseph Parish</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="ms-auto navbar-nav">
-                    <a class="nav-link ms-2 " href="index.php">Home</a>
-                    <a class="nav-link ms-2 active" href="#">Search Record</a>
-                    <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
-                    <a class="nav-link ms-2" href="about.php">About</a>
-                    <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
-
-                </div>
+   <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
+            <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-3" />
+            <div class="d-flex flex-column lh-1">
+                <span>St. Joseph Parish</span>
+                <small class="text-white-50" style="font-size: 0.85rem; margin-top: 4px;">Matalom, Leyte</small>
+            </div>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="ms-auto navbar-nav">
+                <a class="nav-link ms-2" href="index.php">Home</a>
+                <a class="nav-link ms-2 active" href="#">Search Record</a>
+                <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
+                <a class="nav-link ms-2" href="about.php">About</a>
+                <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
             </div>
         </div>
-    </nav>
+    </div>
+</nav>
+
 
     <div class="container mt-5 pt-5 overlay-container content-below-navbar">
 

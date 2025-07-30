@@ -74,8 +74,14 @@ $current_page = basename($_SERVER['PHP_SELF']); // e.g. home.php, manage_users.p
                 </li>
                 <li class="nav-item">
                     <a href="manage_users.php" class="nav-link <?= ($current_page == 'manage_users.php') ? 'active' : '' ?>">
-                        <i class="fa-solid fa-baby"></i>
+                        <i class="fa-solid fa-users"></i>
                         <p>Users</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="parish_staff.php" class="nav-link <?= ($current_page == 'parish_staff.php') ? 'active' : '' ?>">
+                        <i class="fa-solid fa-users"></i>
+                        <p>Parish Staff</p>
                     </a>
                 </li>
 

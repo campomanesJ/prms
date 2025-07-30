@@ -14,22 +14,29 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand fs-4" href="index.php">St. Joseph Parish</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="ms-auto navbar-nav">
-                    <a class="nav-link ms-2" href="index.php">Home</a>
-                    <a class="nav-link ms-2" href="searchRecord.php">Search Record</a>
-                    <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
-                    <a class="nav-link ms-2 active" href="#">About</a>
-                    <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
-                </div>
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
+            <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-3" />
+            <div class="d-flex flex-column lh-1">
+                <span style="margin-bottom: 6px;">St. Joseph Parish</span>
+                <small class="text-white-50" style="font-size: 0.85rem;">Matalom, Leyte</small>
+            </div>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="ms-auto navbar-nav">
+                <a class="nav-link ms-2" href="index.php">Home</a>
+                <a class="nav-link ms-2" href="searchRecord.php">Search Record</a>
+                <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
+                <a class="nav-link ms-2 active" href="#">About</a>
+                <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
             </div>
         </div>
-    </nav>
+    </div>
+</nav>
+
 
     <!-- Hero Section -->
     <div class="hero">

@@ -281,11 +281,28 @@ function formatColumnName($column)
                 });
             });
 
-            // Open PDF generation in new tab using separate script
+            // Redirect PDF generation to specific certificate files
             $(document).on('click', '.generate-cert-btn', function() {
                 const id = $(this).data('id');
                 const table = $(this).data('table');
-                window.open(`generate_pdf.php?table=${table}&id=${id}`, '_blank');
+
+                const pdfFiles = {
+                    'baptism_tbl': 'baptism_certificate.php',
+                    'confirmation_tbl': 'certificate/confirmation_certificate.php',
+                    'death_tbl': 'death_certificate.php',
+                    'marriage_tbl': 'marriage_certificate.php'
+                };
+
+                const pdfFile = pdfFiles[table];
+                if (pdfFile) {
+                    window.open(`${pdfFile}?id=${id}`, '_blank');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Certificate PDF not available for this record.'
+                    });
+                }
             });
         });
     </script>
