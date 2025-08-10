@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include 'db_connect.php';
 
 $data = $_POST;
@@ -17,19 +19,19 @@ if (!$role || !$fname || !$lname || !$username || !$birthdate || !$address || !$
     exit;
 }
 
-// Calculate age from birthdate
-function calculateAge($birthdate) {
+function calculateAge($birthdate)
+{
     $birthDate = new DateTime($birthdate);
     $today = new DateTime('today');
-    $age = $birthDate->diff($today)->y;
-    return $age;
+    return $birthDate->diff($today)->y;
 }
 
 $age = calculateAge($birthdate);
 
-$sql = "INSERT INTO parish_staff (role, fname, mname, lname, username, age, birthdate, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO parish_staff (role, fname, mname, lname, username, age, birthdate, address, email)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssisss", $role, $fname, $mname, $lname, $username, $age, $birthdate, $address, $email);
+$stmt->bind_param("ssssissss", $role, $fname, $mname, $lname, $username, $age, $birthdate, $address, $email);
 
 if ($stmt->execute()) {
     echo json_encode(['status' => 'success']);

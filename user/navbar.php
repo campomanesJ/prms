@@ -7,14 +7,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
         border: none;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     }
+
     .custom-dropdown .dropdown-item {
         color: #fff !important;
         padding: 10px 20px;
     }
+
     .custom-dropdown .dropdown-item:hover {
         background-color: rgba(255, 255, 255, 0.27) !important;
         color: #fff !important;
     }
+
     .sidebar-footer {
         position: absolute;
         bottom: 10px;
@@ -24,6 +27,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         color: #fff;
         font-size: 18px;
     }
+
     .nav-link.active {
         background-color: #007bff !important;
         color: #fff !important;
@@ -49,8 +53,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                 <li><a class="dropdown-item" href="account_settings.php"><i class="fa-solid fa-user-gear"></i> Change Password</a></li>
-                <li><a class="dropdown-item" href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
                 <li><a class="dropdown-item" href="about.php"><i class="fa-solid fa-circle-info"></i> About</a></li>
+
+                <li><a class="dropdown-item" href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
             </ul>
         </li>
     </ul>
@@ -100,8 +105,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <a href="view_data.php" class="nav-link position-relative <?= ($current_page == 'view_data.php') ? 'active' : '' ?>">
                         <i class="fa-solid fa-comments"></i>
                         <p class="d-inline">View Data</p>
-                        <span id="unread-dot" class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none" 
-                        style="width: 10px; height: 10px; border-radius: 50%;"></span>
+                        <span id="unread-dot" class="badge bg-danger position-absolute top-0 start-100 translate-middle d-none"
+                            style="width: 10px; height: 10px; border-radius: 50%;"></span>
                     </a>
                 </li>
             </ul>

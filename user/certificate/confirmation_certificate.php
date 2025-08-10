@@ -23,7 +23,8 @@ if (!$result || $result->num_rows === 0) {
 
 $data = $result->fetch_assoc();
 
-function buildFullName($fname, $mname, $lname) {
+function buildFullName($fname, $mname, $lname)
+{
     $fullName = $fname;
     if (!empty($mname)) {
         $fullName .= ' ' . strtoupper(substr($mname, 0, 1)) . '.';
@@ -59,9 +60,9 @@ $confirmand = trim("$firstName $lastName $suffix");
 $type = 'Confirmation';
 $title = $type . ' Certificate';
 
-// Set half-legal portrait
-$pageWidth = 178;
-$pageHeight = 216;
+// A5 portrait
+$pageWidth = 148;
+$pageHeight = 210;
 
 $pdf = new TCPDF('P', 'mm', [$pageWidth, $pageHeight]);
 $pdf->SetCreator(PDF_CREATOR);
@@ -71,16 +72,16 @@ $pdf->SetMargins(10, 10, 10);
 $pdf->SetAutoPageBreak(true, 10);
 $pdf->AddPage();
 
-// Gradient background (yellow to white, LEFT to RIGHT, only inside black border)
-$outerMargin = 2.5; // already defined above
-$borderThickness = 5.5; // already defined above
+// Gradient background
+$outerMargin = 2.5;
+$borderThickness = 5.5;
 $gradientX = $outerMargin + ($borderThickness / 2);
 $gradientY = $outerMargin + ($borderThickness / 2);
 $gradientWidth = $pageWidth - 2 * $gradientX;
 $gradientHeight = $pageHeight - 2 * $gradientY;
 
-$startColor = array(255, 255, 204); // light yellow
-$endColor = array(255, 255, 255);   // white
+$startColor = array(255, 255, 204);
+$endColor = array(255, 255, 255);
 $steps = 100;
 $stepWidth = $gradientWidth / $steps;
 
@@ -94,10 +95,9 @@ for ($i = 0; $i < $steps; $i++) {
     $pdf->Rect($x, $gradientY, $stepWidth, $gradientHeight, 'F');
 }
 
-
-// Draw black border (3/4 cm = 7.5mm thick, 2.5mm from edge)
-$outerMargin = 2.5; // 1/4 cm from edge
-$borderThickness = 5.5;
+// Border
+$outerMargin = 1.5;
+$borderThickness = 3.5;
 $pdf->SetDrawColor(0, 0, 0);
 $pdf->SetLineWidth($borderThickness);
 $pdf->Rect(
@@ -107,17 +107,31 @@ $pdf->Rect(
     $pageHeight - 2 * ($outerMargin + ($borderThickness / 2))
 );
 
+// Insert left and right logos (1 inch = 25.4mm)
+$logoSize = 25.4;
+$logoY = 12; // vertical position
+$pdf->Image('../../assets/img/cert/left.png', 15, $logoY, $logoSize, $logoSize, '', '', '', false, 300);
+$pdf->Image('../../assets/img/cert/right.png', $pageWidth - $logoSize - 15, $logoY, $logoSize, $logoSize, '', '', '', false, 300);
+
+// Title inline with logos
+$pdf->SetFont('times', 'B', 16);
+$titleY = $logoY + ($logoSize / 2) - 3; // lowered slightly for better balance
+$pdf->SetXY(15 + $logoSize, $titleY);
+$pdf->Cell($pageWidth - (2 * (15 + $logoSize)), 8, 'Certificate of Confirmation', 0, 0, 'C');
+
+// Subtitle right under the bottom of the logos
+$pdf->SetFont('times', 'I', 11);
+$subtitleY = $logoY + $logoSize + 2; // 2mm below the logos
+$pdf->SetXY(20, $subtitleY);
+$pdf->MultiCell($pageWidth - 40, 6, 'THIS IS TO CERTIFY that the Registry of Confirmation on file in this Rectory shows the following data:', 0, 'C');
+$pdf->Ln(4);
+
+
 // HTML content
 $html = '
 <style>
     p { font-size: 10pt; margin: 2px 0; }
-    .center { text-align: center; }
 </style>
-
-<div class="center">
-    <h2 style="margin-bottom: 4px;">Certificate of Confirmation</h2>
-    <p><i>THIS IS TO CERTIFY that the Registry of Confirmation on file in this Rectory shows the following data:</i></p>
-</div><br>
 
 <p><strong>CONFIRMAND:</strong> ' . $confirmand . '</p>
 <p><strong>FATHER:</strong> ' . strtoupper($data['father_name'] ?? '') . ' ' . strtoupper($data['father_suffix'] ?? '') . '</p>
@@ -135,8 +149,10 @@ $html = '
 
 <table width="100%" style="font-size: 10pt;">
     <tr>
-        <td><strong>Certified true copy from the Book of Confirmation:</strong></td>
-        <td align="center"><strong>' . $registrar . '</strong><br>Parish Registrar</td>
+        <td>
+            <strong>Certified true copy from the Book of Confirmation:</strong>
+        </td>
+        <td></td>
     </tr>
     <tr>
         <td>Book Number: ' . $data['book_no'] . '</td>
@@ -146,14 +162,29 @@ $html = '
         <td>Page Number: ' . $data['page_no'] . '</td>
         <td></td>
     </tr>
+</table>
+
+<!-- Signature section aligned to the right -->
+
+<table width="100%" style="font-size: 10pt;">
     <tr>
         <td></td>
-        <td align="center"><br><strong>' . $priest . '</strong><br>Parish Priest</td>
+        <td align="center">
+            <strong>' . $registrar . '</strong><br>Parish Registrar
+        </td>
+    </tr>
+    <tr><td colspan="2" style="height:35px;"></td></tr> <!-- space between signatures -->
+    <tr>
+        <td></td>
+        <td align="center">
+            <strong>' . $priest . '</strong><br>Parish Priest
+        </td>
     </tr>
 </table>
+
 ';
 
-$pdf->writeHTMLCell(0, 0, '', '', $html, 0, 1, 0, true, '', true);
+$pdf->writeHTML($html, true, false, true, false, '');
 
 $fullNameRaw = $firstName . $lastName;
 $fullName = preg_replace('/[^A-Za-z0-9]/', '', $fullNameRaw);
@@ -162,4 +193,3 @@ $filename = "{$type}_{$fullName}_{$dateString}.pdf";
 
 $pdf->Output($filename, 'I');
 exit;
-?>

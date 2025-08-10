@@ -19,7 +19,6 @@ function formatColumnName($column)
 {
     return ucwords(str_replace('_', ' ', $column));
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -77,8 +76,7 @@ function formatColumnName($column)
                                 <table id="<?= $tableId ?>" class="table table-bordered table-striped table-sm datatable">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th style="width:220px; min-width:220px;">Action</th>
-
+                                            <th style="width:180px; min-width:180px;">Action</th>
                                             <?php
                                             if (!empty($records)) {
                                                 $columns = array_keys($records[0]);
@@ -112,7 +110,7 @@ function formatColumnName($column)
                                         foreach ($records as $row) {
                                             $id = $row['id'];
                                             echo "<tr>";
-                                            echo "<td style='width:220px; min-width:220px;'>
+                                            echo "<td>
     <div class='d-flex gap-1'>
         <button class='btn btn-sm btn-warning edit-btn' 
                 data-id='$id' 
@@ -124,11 +122,6 @@ function formatColumnName($column)
                 data-id='$id' 
                 data-table='$tableName'>
             <i class='bi bi-trash'></i> Delete
-        </button>
-        <button class='btn btn-sm btn-success generate-cert-btn' 
-                data-id='$id' 
-                data-table='$tableName'>
-            <i class='bi bi-file-earmark-pdf'></i> PDF
         </button>
     </div>
 </td>";
@@ -162,6 +155,9 @@ function formatColumnName($column)
                         <input type="hidden" name="table" id="editTableName">
                         <input type="hidden" name="id" id="editRecordId">
                         <button type="submit" class="btn btn-primary">Update</button>
+                        <button type="button" class="btn btn-success" id="pdfBtn">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -199,15 +195,20 @@ function formatColumnName($column)
         $(document).ready(function() {
             $('.datatable').DataTable();
 
+            let currentTable = '';
+            let currentId = '';
+
             $(document).on('click', '.edit-btn', function() {
                 const record = JSON.parse($(this).attr('data-record'));
                 const modalBody = $('#editModalBody').html('');
                 $('#editTableName').val($(this).attr('data-table'));
                 $('#editRecordId').val($(this).attr('data-id'));
 
+                currentTable = $(this).attr('data-table');
+                currentId = $(this).attr('data-id');
+
                 for (const key in record) {
                     const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
                     let inputField = '';
 
                     if (
@@ -218,14 +219,14 @@ function formatColumnName($column)
                         key === 'father_suffix'
                     ) {
                         inputField = `
-                <select class="form-select" name="${key}">
-                    <option value="">None</option>
-                    <option value="Jr." ${record[key] === 'Jr.' ? 'selected' : ''}>Jr.</option>
-                    <option value="Sr." ${record[key] === 'Sr.' ? 'selected' : ''}>Sr.</option>
-                    <option value="III" ${record[key] === 'III' ? 'selected' : ''}>III</option>
-                    <option value="IV" ${record[key] === 'IV' ? 'selected' : ''}>IV</option>
-                </select>
-            `;
+                    <select class="form-select" name="${key}">
+                        <option value="">None</option>
+                        <option value="Jr." ${record[key] === 'Jr.' ? 'selected' : ''}>Jr.</option>
+                        <option value="Sr." ${record[key] === 'Sr.' ? 'selected' : ''}>Sr.</option>
+                        <option value="III" ${record[key] === 'III' ? 'selected' : ''}>III</option>
+                        <option value="IV" ${record[key] === 'IV' ? 'selected' : ''}>IV</option>
+                    </select>
+                `;
                     } else if (
                         key === 'birthdate' ||
                         key === 'baptism_date' ||
@@ -235,24 +236,39 @@ function formatColumnName($column)
                         key === 'marriage_date' ||
                         key === 'death_date'
                     ) {
-                        inputField = `
-                <input type="date" class="form-control" name="${key}" value="${record[key]}">
-            `;
+                        inputField = `<input type="date" class="form-control" name="${key}" value="${record[key]}">`;
                     } else {
-                        inputField = `
-                <input type="text" class="form-control" name="${key}" value="${record[key]}" ${key === 'id' ? 'readonly' : ''}>
-            `;
+                        inputField = `<input type="text" class="form-control" name="${key}" value="${record[key]}" ${key === 'id' ? 'readonly' : ''}>`;
                     }
 
                     modalBody.append(`
-            <div class="mb-3">
-                <label class="form-label">${label}</label>
-                ${inputField}
-            </div>
-        `);
+                <div class="mb-3">
+                    <label class="form-label">${label}</label>
+                    ${inputField}
+                </div>
+            `);
                 }
 
                 new bootstrap.Modal(document.getElementById('editModal')).show();
+            });
+
+            $('#pdfBtn').on('click', function() {
+                const pdfFiles = {
+                    'baptism_tbl': 'certificate/baptism_certificate.php',
+                    'confirmation_tbl': 'certificate/confirmation_certificate.php',
+                    'death_tbl': 'certificate/death_certificate.php',
+                    'marriage_tbl': 'certificate/marriage_certificate.php'
+                };
+                const pdfFile = pdfFiles[currentTable];
+                if (pdfFile) {
+                    window.open(`${pdfFile}?id=${currentId}`, '_blank');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Certificate PDF not available.'
+                    });
+                }
             });
 
             $(document).on('click', '.delete-btn', function() {
@@ -279,30 +295,6 @@ function formatColumnName($column)
                         });
                     }
                 });
-            });
-
-            // Redirect PDF generation to specific certificate files
-            $(document).on('click', '.generate-cert-btn', function() {
-                const id = $(this).data('id');
-                const table = $(this).data('table');
-
-                const pdfFiles = {
-                    'baptism_tbl': 'baptism_certificate.php',
-                    'confirmation_tbl': 'certificate/confirmation_certificate.php',
-                    'death_tbl': 'death_certificate.php',
-                    'marriage_tbl': 'marriage_certificate.php'
-                };
-
-                const pdfFile = pdfFiles[table];
-                if (pdfFile) {
-                    window.open(`${pdfFile}?id=${id}`, '_blank');
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Certificate PDF not available for this record.'
-                    });
-                }
             });
         });
     </script>

@@ -20,46 +20,126 @@ if ($result) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
-        body,
-        html {
+        body {
             font-family: 'Poppins', sans-serif;
-            background: #f7f7f7;
+            margin: 0;
+            padding: 0;
         }
 
         .hero {
-            background: url('assets/img/church.jpg') center center / cover no-repeat;
-            height: 50vh;
-            position: relative;
+            background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+                url('assets/img/church.jpg') center center / cover no-repeat;
+            background-attachment: fixed;
+            height: 90vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
             color: #fff;
         }
 
-        .hero::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 700;
         }
 
-        .hero-content {
+        .announcement-container {
+            padding: 4rem 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-img-top {
+            height: 250px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .card-text {
+            color: #495057;
+            font-size: 1rem;
+        }
+
+        .card-footer {
+            background: #fff;
+            font-size: 0.85rem;
+            color: #6c757d;
+            border-top: none;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .card-img-top {
+                height: 180px;
+            }
+        }
+
+        /* Modal Zoom Styles */
+        .zoom-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+        }
+
+        .zoom-controls button {
+            margin: 0 4px;
+            font-size: 1.25rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.85);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .modal-body {
             position: relative;
-            z-index: 1;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
+            overflow: hidden;
             text-align: center;
+        }
+
+        .zoomable-img {
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+            max-width: 100%;
+            max-height: 80vh;
         }
     </style>
 </head>
 
 <body>
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fs-4" href="index.php">St. Joseph Parish</a>
+            <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
+                <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-2" />
+                <div class="d-flex flex-column lh-1">
+                    <span class="text-white fw-bold mb-1">St. Joseph Parish</span>
+                    <small class="text-white-50" style="font-size: 0.85rem;">Matalom, Leyte</small>
+                </div>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -75,38 +155,100 @@ if ($result) {
         </div>
     </nav>
 
-    <div class="hero mt-5">
-        <div class="hero-content">
-            <h1>Announcements & Events</h1>
-        </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Announcements & Events</h1>
     </div>
 
-    <div class="container my-5">
-        <?php if (count($announcements)): ?>
-            <div class="row">
-                <?php foreach ($announcements as $announcement): ?>
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm">
+    <!-- Announcements Section -->
+    <div class="announcement-container container px-4">
+        <div class="row justify-content-center">
+            <?php if (count($announcements) > 0): ?>
+                <?php foreach ($announcements as $index => $announcement): ?>
+                    <div class="col-xl-8 col-lg-10 col-md-11 mb-5">
+                        <div class="card">
                             <?php if (!empty($announcement['image_path'])): ?>
-                                <img src="<?= htmlspecialchars($announcement['image_path']) ?>" class="card-img-top" alt="Announcement Image">
+                                <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" class="card-img-top rounded-top" alt="Announcement Image" data-bs-toggle="modal" data-bs-target="#imageModal<?= $index ?>">
                             <?php endif; ?>
-                            <div class="card-body">
-                                <h5 class="card-title"><?= htmlspecialchars($announcement['title']) ?></h5>
-                                <p class="card-text"><?= nl2br(htmlspecialchars($announcement['description'])) ?></p>
+                            <div class="card-body p-4">
+                                <h3 class="card-title"><?= htmlspecialchars($announcement['title']) ?></h3>
+                                <p class="card-text" style="white-space: pre-line;"><?= htmlspecialchars($announcement['description']) ?></p>
                             </div>
-                            <div class="card-footer text-muted small">
-                                Posted on <?= date('M d, Y', strtotime($announcement['created_at'])) ?>
+                            <div class="card-footer text-center text-muted py-3 bg-transparent border-0">
+                                Posted on <?= isset($announcement['created_at']) ? date("F j, Y", strtotime($announcement['created_at'])) : '' ?>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Modal for Image -->
+                    <?php if (!empty($announcement['image_path'])): ?>
+                        <div class="modal fade" id="imageModal<?= $index ?>" tabindex="-1" aria-labelledby="imageModalLabel<?= $index ?>" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content bg-dark">
+                                    <div class="modal-header border-0">
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-0">
+                                        <div class="zoom-controls">
+                                            <button onclick="zoomIn(<?= $index ?>)">+</button>
+                                            <button onclick="zoomOut(<?= $index ?>)">−</button>
+                                        </div>
+                                        <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" id="zoom-img-<?= $index ?>" class="modal-img zoomable-img" alt="Announcement Full Image">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="alert alert-info text-center">No announcements found at this time.</div>
-        <?php endif; ?>
+            <?php else: ?>
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        No announcements found at this time.
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const zoomLevels = {};
+
+        function zoomIn(index) {
+            zoomLevels[index] = (zoomLevels[index] || 1) + 0.2;
+            updateZoom(index);
+        }
+
+        function zoomOut(index) {
+            zoomLevels[index] = Math.max(0.2, (zoomLevels[index] || 1) - 0.2);
+            updateZoom(index);
+        }
+
+        function updateZoom(index) {
+            const img = document.getElementById(`zoom-img-${index}`);
+            if (img) {
+                img.style.transform = `scale(${zoomLevels[index]})`;
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            const modal = document.querySelector('.modal.show');
+            if (!modal) return;
+
+            const img = modal.querySelector('.zoomable-img');
+            const index = img?.id?.split('-').pop();
+            if (!index) return;
+
+            if (e.ctrlKey && (e.key === '+' || e.key === '=')) {
+                e.preventDefault();
+                zoomIn(index);
+            } else if (e.ctrlKey && e.key === '-') {
+                e.preventDefault();
+                zoomOut(index);
+            }
+        });
+    </script>
 </body>
 
 </html>

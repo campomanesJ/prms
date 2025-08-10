@@ -8,17 +8,14 @@ function maskName($name)
     foreach ($words as $word) {
         $len = mb_strlen($word, 'UTF-8');
         if ($len <= 2) {
-            // if word has only 1 or 2 letters, just mask the middle if exists
             $maskedWords[] = $len === 2 ? mb_substr($word, 0, 1, 'UTF-8') . '*' : $word;
         } else {
-            // keep first and last, middle replaced with *
             $middle = str_repeat('*', $len - 2);
             $maskedWords[] = mb_substr($word, 0, 1, 'UTF-8') . $middle . mb_substr($word, -1, 1, 'UTF-8');
         }
     }
     return implode(' ', $maskedWords);
 }
-
 
 $records = [];
 $type = '';
@@ -31,22 +28,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
     if ($search !== '') {
         switch ($type) {
             case 'baptism':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate 
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no
                         FROM baptism_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'confirmation':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate 
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no
                         FROM confirmation_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'death':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, 'None' as birthdate 
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, 'None' AS birthdate, book_no, page_no
                         FROM death_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'marriage':
-                $sql = "SELECT COALESCE(husband_name, '') AS name, husband_birthdate AS birthdate 
+                $sql = "SELECT COALESCE(husband_name, '') AS name, husband_birthdate AS birthdate, book_no, page_no
                         FROM marriage_tbl 
                         WHERE COALESCE(husband_name, '') LIKE ?";
                 break;
@@ -66,7 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
         }
     }
 }
-
 ?>
 
 
@@ -108,29 +104,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
 </head>
 
 <body>
-   <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
-            <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-3" />
-            <div class="d-flex flex-column lh-1">
-                <span>St. Joseph Parish</span>
-                <small class="text-white-50" style="font-size: 0.85rem; margin-top: 4px;">Matalom, Leyte</small>
-            </div>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="ms-auto navbar-nav">
-                <a class="nav-link ms-2" href="index.php">Home</a>
-                <a class="nav-link ms-2 active" href="#">Search Record</a>
-                <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
-                <a class="nav-link ms-2" href="about.php">About</a>
-                <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
+                <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-3" />
+                <div class="d-flex flex-column lh-1">
+                    <span>St. Joseph Parish</span>
+                    <small class="text-white-50" style="font-size: 0.85rem; margin-top: 4px;">Matalom, Leyte</small>
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="ms-auto navbar-nav">
+                    <a class="nav-link ms-2" href="index.php">Home</a>
+                    <a class="nav-link ms-2 active" href="#">Search Record</a>
+                    <a class="nav-link ms-2" href="announcement.php">Announcements & Events</a>
+                    <a class="nav-link ms-2" href="about.php">About</a>
+                    <a class="nav-link ms-2 btn btn-warning border border-white" href="login/login.php">Login</a>
+                </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
 
     <div class="container mt-5 pt-5 overlay-container content-below-navbar">
@@ -154,21 +150,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
                 </button>
             </div>
         </form>
-
         <?php if ($type && count($records)): ?>
             <table class="table table-bordered table-striped">
                 <thead class="table-dark">
                     <tr>
                         <th>Name</th>
                         <th>Birthdate</th>
+                        <th>Book No</th>
+                        <th>Page No</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($records as $rec): ?>
                         <tr>
                             <td><?= htmlspecialchars(maskName($rec['name'])) ?></td>
-
                             <td><?= htmlspecialchars($rec['birthdate']) ?></td>
+                            <td><?= htmlspecialchars($rec['book_no']) ?></td>
+                            <td><?= htmlspecialchars($rec['page_no']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -181,6 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
 </body>
 
 </html>

@@ -1,13 +1,13 @@
 <?php
 session_start();
-include 'db_connect.php';
+include '../db_connect.php';
 
 if (!isset($_SESSION['login_id'])) {
-    header("Location: ../index.php");
+    header("Location: ../../index.php");
     exit;
 }
 
-require_once('../tcpdf/tcpdf.php');
+require_once('../../tcpdf/tcpdf.php');
 
 if (!isset($_GET['id'])) {
     die("Missing ID parameter.");

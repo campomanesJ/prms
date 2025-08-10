@@ -1,331 +1,315 @@
 <?php
 session_start();
-include 'header.php';
 include 'db_connect.php';
+include 'header.php';
 
 if (!isset($_SESSION['login_id'])) {
     header("Location: ../index.php");
     exit;
 }
+
+// Handle insert POST
+$alert = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_staff'])) {
+    $role = $_POST['role'];
+    $fname = trim($_POST['fname']);
+    $mname = trim($_POST['mname']);
+    $lname = trim($_POST['lname']);
+    $username = trim($_POST['username']);
+    $birthdate = $_POST['birthdate'];
+    $address = trim($_POST['address']);
+    $email = trim($_POST['email']);
+
+    $stmt = $conn->prepare("INSERT INTO parish_staff (role, fname, mname, lname, username, birthdate, address, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    if ($stmt) {
+        $stmt->bind_param("ssssssss", $role, $fname, $mname, $lname, $username, $birthdate, $address, $email);
+        $stmt->execute();
+        $stmt->close();
+        $alert = '<div class="alert alert-success">Staff added successfully!</div>';
+    } else {
+        $alert = '<div class="alert alert-danger">Error adding staff.</div>';
+    }
+}
+
+// Pagination & Search
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
+$sql = "SELECT * FROM parish_staff WHERE fname LIKE ? OR lname LIKE ? OR role LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+$searchParam = "%" . $search . "%";
+$stmt->bind_param("sssii", $searchParam, $searchParam, $searchParam, $limit, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
+$staffs = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Count total for pagination
+$countStmt = $conn->prepare("SELECT COUNT(*) as total FROM parish_staff WHERE fname LIKE ? OR lname LIKE ? OR role LIKE ?");
+$countStmt->bind_param("sss", $searchParam, $searchParam, $searchParam);
+$countStmt->execute();
+$countResult = $countStmt->get_result();
+$totalRows = $countResult->fetch_assoc()['total'];
+$countStmt->close();
+
+$totalPages = ceil($totalRows / $limit);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Parish Staff List</title>
-
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .bg-primary {
-            background-color: rgb(240, 240, 240) !important;
-        }
-        .table .thead-dark th {
-            color: #fff;
-            background-color: rgba(204, 204, 204, 0.77);
-            border-color: rgb(212, 212, 212);
-        }
-        thead {
-            background-color: rgba(135, 206, 235, 0.5) !important;
+        .content-wrapper {
+            padding: 20px;
         }
     </style>
 </head>
-<body class="hold-transition layout-fixed">
-<div class="wrapper">
-    <?php include 'navbar.php'; ?>
 
-    <div class="content-wrapper">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12 mx-auto mt-4">
-                    <div class="card shadow-lg">
-                        <div class="card-header bg-primary text-white">
-                            <h5 style="color: black; font-size: 40px; font-weight: bold;" class="mb-0 d-inline">Parish Staff List</h5>
-                            <button id="addUserBtn" class="btn btn-success btn-sm float-right">+ Add Staff</button>
-                        </div>
-                        <div class="card-body">
-                            <table id="usersTable" class="table table-bordered table-hover dt-responsive nowrap" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Role</th>
-                                        <th>Username</th>
-                                        <th>Full Name</th>
-                                        <th>Age</th>
-                                        <th>Birthdate</th>
-                                        <th>Address</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-<?php
-$sql = "SELECT id, role, username, fname, mname, lname, birthdate, address, email FROM parish_staff";
-$result = $conn->query($sql);
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <?php include 'navbar.php'; ?>
 
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $role = strtolower($row['role']);
-        $displayRole = ucfirst($role);
-        if ($role === 'priest') $displayRole = 'Parish Priest';
-        if ($role === 'registrar') $displayRole = 'Parish Registrar';
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <h2 class="mb-4">Parish Staff List</h2>
 
-        $fullName = htmlspecialchars($row['fname'], ENT_QUOTES);
-if (!empty($row['mname'])) {
-    $fullName .= ' ' . htmlspecialchars($row['mname'], ENT_QUOTES);
-}
-$fullName .= ' ' . htmlspecialchars($row['lname'], ENT_QUOTES);
+                <?= $alert ?>
 
-// Add "Fr." prefix if role is priest
-if ($role === 'priest') {
-    $fullName = 'Fr. ' . $fullName;
-}
-
-
-        $age = '';
-        if (!empty($row['birthdate'])) {
-            $birthDate = new DateTime($row['birthdate']);
-            $today = new DateTime('today');
-            $age = $birthDate->diff($today)->y;
-        }
-
-        echo '<tr>';
-        echo '<td>' . $displayRole . '</td>';
-        echo '<td>' . htmlspecialchars($row['username'], ENT_QUOTES) . '</td>';
-        echo '<td>' . $fullName . '</td>';
-        echo '<td>' . htmlspecialchars($age, ENT_QUOTES) . '</td>';
-        echo '<td>' . htmlspecialchars($row['birthdate'], ENT_QUOTES) . '</td>';
-        echo '<td>' . htmlspecialchars($row['address'], ENT_QUOTES) . '</td>';
-        echo '<td>' . htmlspecialchars($row['email'], ENT_QUOTES) . '</td>';
-        echo '<td>';
-        echo '<button class="btn btn-warning btn-sm editUserBtn" ' .
-             'data-id="' . $row['id'] . '" ' .
-             'data-role="' . htmlspecialchars($row['role'], ENT_QUOTES) . '" ' .
-             'data-username="' . htmlspecialchars($row['username'], ENT_QUOTES) . '" ' .
-             'data-fname="' . htmlspecialchars($row['fname'], ENT_QUOTES) . '" ' .
-             'data-mname="' . htmlspecialchars($row['mname'], ENT_QUOTES) . '" ' .
-             'data-lname="' . htmlspecialchars($row['lname'], ENT_QUOTES) . '" ' .
-             'data-birthdate="' . htmlspecialchars($row['birthdate'], ENT_QUOTES) . '" ' .
-             'data-address="' . htmlspecialchars($row['address'], ENT_QUOTES) . '" ' .
-             'data-email="' . htmlspecialchars($row['email'], ENT_QUOTES) . '"' .
-             '>Edit</button> ';
-        echo '<button class="btn btn-danger btn-sm deleteUserBtn" data-id="' . $row['id'] . '">Delete</button>';
-        echo '</td>';
-        echo '</tr>';
-    }
-} else {
-    echo '<tr><td colspan="8" class="text-center">No staff found</td></tr>';
-}
-$conn->close();
-?>
-                                </tbody>
-                            </table>
-                        </div>
+                <form method="get" id="filterForm" class="row g-3 align-items-center mb-4">
+                    <div class="col-md-4">
+                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" class="form-control" placeholder="Search by name or role" onchange="this.form.submit()">
                     </div>
+                    <div class="col-md-2">
+                        <select name="limit" class="form-select" onchange="this.form.submit()">
+                            <?php foreach ([5, 10, 25, 50] as $option): ?>
+                                <option value="<?= $option ?>" <?= $limit == $option ? 'selected' : '' ?>><?= $option ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#addModal">+ Add Staff</button>
+                    </div>
+                </form>
+
+                <?php if (count($staffs) > 0): ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Role</th>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Age</th>
+                                    <th>Birthdate</th>
+                                    <th>Address</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($staffs as $row): ?>
+                                    <?php
+                                    $fullName = htmlspecialchars($row['fname'] . ' ' . $row['mname'] . ' ' . $row['lname']);
+                                    if (strtolower($row['role']) === 'priest') $fullName = 'Fr. ' . $fullName;
+
+                                    $birthDate = new DateTime($row['birthdate']);
+                                    $today = new DateTime();
+                                    $age = $birthDate->diff($today)->y;
+
+                                    $role = ucfirst($row['role']);
+                                    if ($role === 'Priest') $role = 'Parish Priest';
+                                    if ($role === 'Registrar') $role = 'Parish Registrar';
+                                    ?>
+                                    <tr>
+                                        <td><?= $role ?></td>
+                                        <td><?= htmlspecialchars($row['username']) ?></td>
+                                        <td><?= $fullName ?></td>
+                                        <td><?= $age ?></td>
+                                        <td><?= htmlspecialchars($row['birthdate']) ?></td>
+                                        <td><?= htmlspecialchars($row['address']) ?></td>
+                                        <td><?= htmlspecialchars($row['email']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                    <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor; ?>
+                        </ul>
+                    </nav>
+                <?php else: ?>
+                    <p class="text-muted text-center">No staff found.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Add Staff Modal -->
+        <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow-sm border-0">
+                    <form method="post">
+                        <input type="hidden" name="add_staff" value="1">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="addModalLabel">Add New Staff</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="container-fluid">
+                                <div class="row g-3">
+
+                                    <!-- Name Section -->
+                                    <div class="col-12"><strong>Personal Information</strong></div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="fname" id="fname" class="form-control" placeholder="First Name" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="mname" class="form-control" placeholder="Middle Name (optional)">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="lname" class="form-control" placeholder="Last Name" required>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <input type="date" name="birthdate" id="birthdate" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" name="age" id="age" class="form-control" placeholder="Age" readonly>
+                                    </div>
+
+                                    <hr class="mt-4 mb-2">
+
+                                    <!-- Contact Section -->
+                                    <div class="col-12"><strong>Contact Details</strong></div>
+                                    <div class="col-md-6">
+                                        <input type="text" name="address" class="form-control" placeholder="Address" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="email" name="email" id="email" class="form-control" placeholder="Email" required>
+                                        <small id="emailFeedback" class="text-danger" style="display:none;"></small>
+                                    </div>
+
+
+                                    <hr class="mt-4 mb-2">
+
+                                    <!-- Role and Account Section -->
+                                    <div class="col-12"><strong>Account Information</strong></div>
+                                    <div class="col-md-6">
+                                        <select name="role" id="role" class="form-select" required>
+                                            <option value="" disabled selected>Select Role</option>
+                                            <option value="priest">Parish Priest</option>
+                                            <option value="registrar">Parish Registrar</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" name="username" id="username" class="form-control" placeholder="Username" readonly required>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-plus-circle"></i> Add Staff
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- JS -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <?php include 'footer.php'; ?>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 
 <script>
-$(document).ready(function() {
-    $('#usersTable').DataTable({ responsive: true, order: [] });
+    document.addEventListener('DOMContentLoaded', function() {
+        const role = document.getElementById('role');
+        const fname = document.getElementById('fname');
+        const username = document.getElementById('username');
+        const birthdate = document.getElementById('birthdate');
+        const age = document.getElementById('age');
 
-    function generateUsername() {
-        let role = $('#swal-role').val();
-        let fname = $('#swal-fname').val().toLowerCase().replace(/\s+/g, '');
-        let lname = $('#swal-lname').val().toLowerCase().replace(/\s+/g, '');
-        if (role && fname && lname) {
-            $('#swal-username').val(`${fname}.${lname}@${role}`);
+        function updateUsername() {
+            const fnameVal = fname.value.trim().toLowerCase();
+            const roleVal = role.value;
+
+            if (fnameVal && roleVal) {
+                fetch(`generate_username.php?fname=${encodeURIComponent(fnameVal)}&role=${encodeURIComponent(roleVal)}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        username.value = data;
+                    });
+            } else {
+                username.value = '';
+            }
+        }
+
+
+        function calculateAge() {
+            const bdate = new Date(birthdate.value);
+            const today = new Date();
+            if (!isNaN(bdate)) {
+                let years = today.getFullYear() - bdate.getFullYear();
+                const m = today.getMonth() - bdate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) {
+                    years--;
+                }
+                age.value = years;
+            } else {
+                age.value = '';
+            }
+        }
+
+        role.addEventListener('change', updateUsername);
+        fname.addEventListener('input', updateUsername);
+        birthdate.addEventListener('change', calculateAge);
+    });
+
+
+    const emailInput = document.getElementById('email');
+    const emailFeedback = document.getElementById('emailFeedback');
+    const submitButton = document.querySelector('#addModal button[type="submit"]');
+
+    emailInput.addEventListener('blur', () => {
+        const email = emailInput.value.trim();
+        if (email !== '') {
+            fetch(`check_email.php?email=${encodeURIComponent(email)}`)
+                .then(response => response.text())
+                .then(result => {
+                    if (result === 'exists') {
+                        emailFeedback.style.display = 'block';
+                        emailFeedback.textContent = 'This email is already registered.';
+                        submitButton.disabled = true;
+                    } else {
+                        emailFeedback.style.display = 'none';
+                        emailFeedback.textContent = '';
+                        submitButton.disabled = false;
+                    }
+                });
         } else {
-            $('#swal-username').val('');
+            emailFeedback.style.display = 'none';
+            emailFeedback.textContent = '';
+            submitButton.disabled = false;
         }
-    }
-
-    function calculateAge(birthdateStr) {
-        const birthdate = new Date(birthdateStr);
-        const today = new Date();
-        let age = today.getFullYear() - birthdate.getFullYear();
-        const m = today.getMonth() - birthdate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthdate.getDate())) {
-            age--;
-        }
-        return isNaN(age) ? '' : age;
-    }
-
-    function bindAgeField() {
-        $('#swal-birthdate').on('change', function() {
-            const birthdate = $(this).val();
-            const age = calculateAge(birthdate);
-            $('#swal-age').val(age);
-        }).trigger('change');
-    }
-
-    $('#addUserBtn').on('click', function() {
-        Swal.fire({
-            title: 'Add New Staff',
-            html: `
-                <select id="swal-role" class="swal2-input">
-                    <option value="" disabled selected>Select Role</option>
-                    <option value="priest">Parish Priest</option>
-                    <option value="registrar">Parish Registrar</option>
-                </select>
-                <input type="text" id="swal-fname" class="swal2-input" placeholder="First Name" />
-                <input type="text" id="swal-mname" class="swal2-input" placeholder="Middle Name (optional)" />
-                <input type="text" id="swal-lname" class="swal2-input" placeholder="Last Name" />
-                <input type="text" id="swal-username" class="swal2-input" placeholder="Username" disabled />
-                <input type="date" id="swal-birthdate" class="swal2-input" />
-                <input type="text" id="swal-age" class="swal2-input" placeholder="Age" disabled />
-                <input type="text" id="swal-address" class="swal2-input" placeholder="Address" />
-                <input type="email" id="swal-email" class="swal2-input" placeholder="Email" />
-            `,
-            focusConfirm: false,
-            preConfirm: () => {
-                const role = $('#swal-role').val();
-                const fname = $('#swal-fname').val().trim();
-                const mname = $('#swal-mname').val().trim();
-                const lname = $('#swal-lname').val().trim();
-                const username = $('#swal-username').val().trim();
-                const birthdate = $('#swal-birthdate').val().trim();
-                const address = $('#swal-address').val().trim();
-                const email = $('#swal-email').val().trim();
-
-                if (!role || !fname || !lname || !username || !birthdate || !address || !email) {
-                    Swal.showValidationMessage('Please fill in all required fields');
-                    return false;
-                }
-
-                return {role, fname, mname, lname, username, birthdate, address, email};
-            },
-            didOpen: () => {
-                $('#swal-role, #swal-fname, #swal-lname').on('input change', generateUsername);
-                bindAgeField();
-            },
-            confirmButtonText: 'Add Staff',
-            showCancelButton: true,
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post('add_staff.php', result.value, function(response) {
-                    try {
-                        const res = JSON.parse(response);
-                        if (res.status === 'success') {
-                            Swal.fire('Added!', 'Staff has been added.', 'success').then(() => location.reload());
-                        } else {
-                            Swal.fire('Error', res.message || 'Failed to add staff.', 'error');
-                        }
-                    } catch {
-                        Swal.fire('Error', 'Unexpected server response.', 'error');
-                    }
-                });
-            }
-        });
     });
-
-    $('#usersTable').on('click', '.editUserBtn', function() {
-        const btn = $(this);
-        Swal.fire({
-            title: 'Edit Staff',
-            html: `
-                <select id="swal-role" class="swal2-input">
-                    <option value="priest">Parish Priest</option>
-                    <option value="registrar">Parish Registrar</option>
-                </select>
-                <input type="text" id="swal-fname" class="swal2-input" placeholder="First Name" />
-                <input type="text" id="swal-mname" class="swal2-input" placeholder="Middle Name (optional)" />
-                <input type="text" id="swal-lname" class="swal2-input" placeholder="Last Name" />
-                <input type="text" id="swal-username" class="swal2-input" placeholder="Username" disabled />
-                <input type="date" id="swal-birthdate" class="swal2-input" />
-                <input type="text" id="swal-age" class="swal2-input" placeholder="Age" disabled />
-                <input type="text" id="swal-address" class="swal2-input" placeholder="Address" />
-                <input type="email" id="swal-email" class="swal2-input" placeholder="Email" />
-            `,
-            focusConfirm: false,
-            didOpen: () => {
-                $('#swal-role').val(btn.data('role'));
-                $('#swal-fname').val(btn.data('fname'));
-                $('#swal-mname').val(btn.data('mname'));
-                $('#swal-lname').val(btn.data('lname'));
-                $('#swal-username').val(btn.data('username'));
-                $('#swal-birthdate').val(btn.data('birthdate'));
-                $('#swal-address').val(btn.data('address'));
-                $('#swal-email').val(btn.data('email'));
-                $('#swal-role, #swal-fname, #swal-lname').on('input change', generateUsername);
-                bindAgeField();
-            },
-            preConfirm: () => {
-                const role = $('#swal-role').val();
-                const fname = $('#swal-fname').val().trim();
-                const mname = $('#swal-mname').val().trim();
-                const lname = $('#swal-lname').val().trim();
-                const username = $('#swal-username').val().trim();
-                const birthdate = $('#swal-birthdate').val().trim();
-                const address = $('#swal-address').val().trim();
-                const email = $('#swal-email').val().trim();
-
-                if (!role || !fname || !lname || !username || !birthdate || !address || !email) {
-                    Swal.showValidationMessage('Please fill in all required fields');
-                    return false;
-                }
-
-                return {id: btn.data('id'), role, fname, mname, lname, username, birthdate, address, email};
-            },
-            confirmButtonText: 'Update Staff',
-            showCancelButton: true,
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post('update_staff.php', result.value, function(response) {
-                    try {
-                        const res = JSON.parse(response);
-                        if (res.status === 'success') {
-                            Swal.fire('Updated!', 'Staff details have been updated.', 'success').then(() => location.reload());
-                        } else {
-                            Swal.fire('Error', res.message || 'Failed to update staff.', 'error');
-                        }
-                    } catch {
-                        Swal.fire('Error', 'Unexpected server response.', 'error');
-                    }
-                });
-            }
-        });
-    });
-
-    $('#usersTable').on('click', '.deleteUserBtn', function() {
-        const id = $(this).data('id');
-        Swal.fire({
-            title: 'Are you sure?',
-            text: 'This action cannot be undone!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post('delete_staff.php', {id: id}, function(response) {
-                    try {
-                        const res = JSON.parse(response);
-                        if (res.status === 'success') {
-                            Swal.fire('Deleted!', 'Staff has been deleted.', 'success').then(() => location.reload());
-                        } else {
-                            Swal.fire('Error', res.message || 'Failed to delete staff.', 'error');
-                        }
-                    } catch {
-                        Swal.fire('Error', 'Unexpected server response.', 'error');
-                    }
-                });
-            }
-        });
-    });
-});
 </script>
 
-<?php include 'footer.php'; ?>
-</body>
 </html>
