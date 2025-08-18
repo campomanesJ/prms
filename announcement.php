@@ -20,6 +20,10 @@ if ($result) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             margin: 0;
@@ -30,7 +34,7 @@ if ($result) {
             background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
                 url('assets/img/church.jpg') center center / cover no-repeat;
             background-attachment: fixed;
-            height: 90vh;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -126,6 +130,41 @@ if ($result) {
             max-width: 100%;
             max-height: 80vh;
         }
+
+        /* Gradient Background for Announcement Section */
+        .announcement-section {
+            background: linear-gradient(180deg, #1f1d1dff 0%, #f0f9ff 100%);
+
+            padding: 4rem 0;
+        }
+
+        .announcement-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Back to Top Button */
+        #backToTopBtn {
+            position: fixed;
+            bottom: 40px;
+            right: 30px;
+            z-index: 999;
+            font-size: 22px;
+            border: none;
+            outline: none;
+            background-color: #000000ff;
+            color: white;
+            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #backToTopBtn:hover {
+            background-color: #0b5ed7;
+        }
     </style>
 </head>
 
@@ -162,93 +201,127 @@ if ($result) {
     </div>
 
     <!-- Announcements Section -->
-    <div class="announcement-container container px-4">
-        <div class="row justify-content-center">
-            <?php if (count($announcements) > 0): ?>
-                <?php foreach ($announcements as $index => $announcement): ?>
-                    <div class="col-xl-8 col-lg-10 col-md-11 mb-5">
-                        <div class="card">
-                            <?php if (!empty($announcement['image_path'])): ?>
-                                <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" class="card-img-top rounded-top" alt="Announcement Image" data-bs-toggle="modal" data-bs-target="#imageModal<?= $index ?>">
-                            <?php endif; ?>
-                            <div class="card-body p-4">
-                                <h3 class="card-title"><?= htmlspecialchars($announcement['title']) ?></h3>
-                                <p class="card-text" style="white-space: pre-line;"><?= htmlspecialchars($announcement['description']) ?></p>
-                            </div>
-                            <div class="card-footer text-center text-muted py-3 bg-transparent border-0">
-                                Posted on <?= isset($announcement['created_at']) ? date("F j, Y", strtotime($announcement['created_at'])) : '' ?>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Announcements Section with Gradient Background -->
+    <div class="announcement-section">
+        <div class="announcement-container">
+            <div class="row justify-content-center">
+                <!-- existing PHP loop for announcements here -->
 
-                    <!-- Modal for Image -->
-                    <?php if (!empty($announcement['image_path'])): ?>
-                        <div class="modal fade" id="imageModal<?= $index ?>" tabindex="-1" aria-labelledby="imageModalLabel<?= $index ?>" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content bg-dark">
-                                    <div class="modal-header border-0">
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="row justify-content-center">
+                    <?php if (count($announcements) > 0): ?>
+                        <?php foreach ($announcements as $index => $announcement): ?>
+                            <div class="col-xl-8 col-lg-10 col-md-11 mb-5">
+                                <div class="card" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#announcementModal<?= $index ?>">
+
+                                    <?php if (!empty($announcement['image_path'])): ?>
+                                        <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" class="card-img-top rounded-top" alt="Announcement Image" data-bs-toggle="modal" data-bs-target="#announcementModal<?= $index ?>">
+                                    <?php endif; ?>
+                                    <div class="card-body p-4">
+                                        <h3 class="card-title"><?= htmlspecialchars($announcement['title']) ?></h3>
+                                        <p class="card-text" style="white-space: pre-line;"><?= htmlspecialchars($announcement['description']) ?></p>
                                     </div>
-                                    <div class="modal-body p-0">
-                                        <div class="zoom-controls">
-                                            <button onclick="zoomIn(<?= $index ?>)">+</button>
-                                            <button onclick="zoomOut(<?= $index ?>)">−</button>
-                                        </div>
-                                        <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" id="zoom-img-<?= $index ?>" class="modal-img zoomable-img" alt="Announcement Full Image">
+                                    <div class="card-footer text-center text-muted py-3 bg-transparent border-0">
+                                        Posted on <?= isset($announcement['created_at']) ? date("F j, Y", strtotime($announcement['created_at'])) : '' ?>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Full Announcement Modal -->
+                            <div class="modal fade" id="announcementModal<?= $index ?>" tabindex="-1" aria-labelledby="announcementModalLabel<?= $index ?>" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="announcementModalLabel<?= $index ?>"><?= htmlspecialchars($announcement['title']) ?></h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <?php if (!empty($announcement['image_path'])): ?>
+                                                <img src="admin/<?= htmlspecialchars($announcement['image_path']) ?>" class="img-fluid rounded mb-3" alt="Full Announcement Image">
+                                            <?php endif; ?>
+                                            <p><?= nl2br(htmlspecialchars($announcement['description'])) ?></p>
+                                            <div class="text-muted small mt-4">Posted on <?= isset($announcement['created_at']) ? date("F j, Y", strtotime($announcement['created_at'])) : '' ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                No announcements found at this time.
+                            </div>
                         </div>
                     <?php endif; ?>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        No announcements found at this time.
-                    </div>
                 </div>
-            <?php endif; ?>
-        </div>
-    </div>
+            </div> <!-- .announcement-container -->
+        </div> <!-- .announcement-section -->
+        <!-- Back to Top Button -->
+        <button onclick="scrollToTop()" id="backToTopBtn" title="Back to top">
+            ▲
+        </button>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const zoomLevels = {};
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            const zoomLevels = {};
 
-        function zoomIn(index) {
-            zoomLevels[index] = (zoomLevels[index] || 1) + 0.2;
-            updateZoom(index);
-        }
-
-        function zoomOut(index) {
-            zoomLevels[index] = Math.max(0.2, (zoomLevels[index] || 1) - 0.2);
-            updateZoom(index);
-        }
-
-        function updateZoom(index) {
-            const img = document.getElementById(`zoom-img-${index}`);
-            if (img) {
-                img.style.transform = `scale(${zoomLevels[index]})`;
+            function zoomIn(index) {
+                zoomLevels[index] = (zoomLevels[index] || 1) + 0.2;
+                updateZoom(index);
             }
-        }
 
-        document.addEventListener('keydown', function(e) {
-            const modal = document.querySelector('.modal.show');
-            if (!modal) return;
-
-            const img = modal.querySelector('.zoomable-img');
-            const index = img?.id?.split('-').pop();
-            if (!index) return;
-
-            if (e.ctrlKey && (e.key === '+' || e.key === '=')) {
-                e.preventDefault();
-                zoomIn(index);
-            } else if (e.ctrlKey && e.key === '-') {
-                e.preventDefault();
-                zoomOut(index);
+            function zoomOut(index) {
+                zoomLevels[index] = Math.max(0.2, (zoomLevels[index] || 1) - 0.2);
+                updateZoom(index);
             }
-        });
-    </script>
+
+            function updateZoom(index) {
+                const img = document.getElementById(`zoom-img-${index}`);
+                if (img) {
+                    img.style.transform = `scale(${zoomLevels[index]})`;
+                }
+            }
+
+            document.addEventListener('keydown', function(e) {
+                const modal = document.querySelector('.modal.show');
+                if (!modal) return;
+
+                const img = modal.querySelector('.zoomable-img');
+                const index = img?.id?.split('-').pop();
+                if (!index) return;
+
+                if (e.ctrlKey && (e.key === '+' || e.key === '=')) {
+                    e.preventDefault();
+                    zoomIn(index);
+                } else if (e.ctrlKey && e.key === '-') {
+                    e.preventDefault();
+                    zoomOut(index);
+                }
+            });
+
+            // Back to Top Logic
+            const backToTopBtn = document.getElementById("backToTopBtn");
+
+            window.onscroll = function() {
+                if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                    backToTopBtn.style.display = "block";
+                } else {
+                    backToTopBtn.style.display = "none";
+                }
+            };
+
+            function scrollToTop() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        </script>
+
+
+
+
 </body>
 
 </html>

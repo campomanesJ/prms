@@ -31,7 +31,7 @@ if (!isset($_SESSION['reset_email'])) {
 
 $email = $_SESSION['reset_email'];
 $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-$stmt = $conn->prepare("UPDATE users SET password = ? WHERE email = ?");
+$stmt = $conn->prepare("UPDATE user SET password = ? WHERE email = ?");
 $stmt->bind_param("ss", $hashedPassword, $email);
 
 if ($stmt->execute()) {
@@ -43,4 +43,3 @@ if ($stmt->execute()) {
 
 $stmt->close();
 $conn->close();
-?>

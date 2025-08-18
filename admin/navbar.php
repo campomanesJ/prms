@@ -53,8 +53,7 @@ $current_page = basename($_SERVER['PHP_SELF']); // e.g. home.php, manage_users.p
                 <i class="fas fa-user fa-fw mr-1"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="account_settings.php"><i class="fa-solid fa-user-gear"></i> Change Password</a></li>
-                <li><a class="dropdown-item" href="about.php"><i class="fa-solid fa-circle-info"></i> About</a></li>
+                <li><a class="dropdown-item" href="change_password.php"><i class="fa-solid fa-user-gear"></i> Change Password</a></li>
 
                 <li><a class="dropdown-item" href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
             </ul>

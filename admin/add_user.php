@@ -22,14 +22,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    $checkStmt = $conn->prepare("SELECT id FROM user WHERE username = ? OR email = ?");
+    $checkStmt = $conn->prepare("SELECT username, email FROM user WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)");
     $checkStmt->bind_param("ss", $username, $email);
     $checkStmt->execute();
-    $checkStmt->store_result();
-    if ($checkStmt->num_rows > 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Username or email already exists!']);
+    $result = $checkStmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        if (strcasecmp($row['username'], $username) === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Username already exists!']);
+        } elseif (strcasecmp($row['email'], $email) === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Email already exists!']);
+        }
         exit;
     }
+
     $checkStmt->close();
 
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
@@ -46,4 +53,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
     $conn->close();
 }
-?>

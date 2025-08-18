@@ -75,7 +75,7 @@ $total_marriage = getTotal($conn, 'marriage_tbl');
 
 </head>
 
-<body class="hold-transition layout-fixed">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
         <?php include 'navbar.php'; ?>
         <div class="content-wrapper" style="margin-top: 20px;">

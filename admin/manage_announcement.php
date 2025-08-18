@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $title = mysqli_real_escape_string($conn, $_POST['title']);
         $description = mysqli_real_escape_string($conn, $_POST['description']);
 
-        // Fetch existing image path
         $res = mysqli_query($conn, "SELECT image_path FROM announcements WHERE id = $id");
         $old = mysqli_fetch_assoc($res);
         $old_image = $old['image_path'];
@@ -61,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
-                // Delete old image if exists
                 if ($old_image && file_exists($old_image)) {
                     unlink($old_image);
                 }
@@ -84,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     } elseif ($_POST['action'] === 'delete_announcement') {
         $id = intval($_POST['id']);
 
-        // Delete image file if exists
         $res = mysqli_query($conn, "SELECT image_path FROM announcements WHERE id = $id");
         $old = mysqli_fetch_assoc($res);
         if ($old && $old['image_path'] && file_exists($old['image_path'])) {
@@ -102,69 +99,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Fetch all announcements for display
 $result = mysqli_query($conn, "SELECT * FROM announcements ORDER BY id DESC");
+
+// 🔹 Pagination + Search setup
+$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10; // default 10 entries
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+$offset = ($page - 1) * $limit;
+
+// Count total records
+$whereClause = $search ? "WHERE title LIKE '%$search%' OR description LIKE '%$search%'" : "";
+$totalQuery = mysqli_query($conn, "SELECT COUNT(*) as total FROM announcements $whereClause");
+$totalRecords = mysqli_fetch_assoc($totalQuery)['total'];
+$totalPages = ceil($totalRecords / $limit);
+
+// Fetch paginated records
+$sql = "SELECT * FROM announcements $whereClause ORDER BY id DESC LIMIT $limit OFFSET $offset";
+$result = mysqli_query($conn, $sql);
 
 ?>
 
-<!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" />
-
-<!-- SweetAlert2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
-
 <style>
-    /* Adjust for content-wrapper */
     .content-wrapper {
         background: #f4f6f9;
         padding: 20px 30px;
         min-height: calc(100vh - 56px);
-        /* adjust based on your header height */
     }
 
     h2 {
         font-weight: 700;
         color: #343a40;
-    }
-
-    .swal2-input,
-    .swal2-textarea {
-        font-size: 1rem !important;
-    }
-
-    .dataTables_wrapper .dataTables_filter {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-
-    .dataTables_wrapper .dataTables_filter input {
-        border-radius: 0.25rem;
-        border: 1px solid #ced4da;
-        padding: 0.375rem 0.75rem;
-    }
-
-    /* Container for Add button and search input aligned left and right */
-    .dt-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    /* Remove the card-header title */
-    .card-header h3.card-title {
-        display: none;
-    }
-
-    table.dataTable tbody tr:hover {
-        background-color: #d2d6de !important;
-        /* AdminLTE hover color */
     }
 
     img.announcement-img {
@@ -174,21 +139,8 @@ $result = mysqli_query($conn, "SELECT * FROM announcements ORDER BY id DESC");
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    /* Action buttons */
     .btn-action {
         margin: 0 2px;
-    }
-
-    /* Responsive for buttons */
-    @media (max-width: 575.98px) {
-        .dt-controls {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        #btnAddAnnouncement {
-            width: 100%;
-        }
     }
 </style>
 
@@ -197,59 +149,186 @@ $result = mysqli_query($conn, "SELECT * FROM announcements ORDER BY id DESC");
         <?php include 'navbar.php'; ?>
 
         <div class="content-wrapper">
-            <section class="content-header mb-3">
+            <section class="content-header mb-3 d-flex justify-content-between align-items-center">
                 <h2>Announcements</h2>
+                <button id="btnAddAnnouncement" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Add Announcement
+                </button>
             </section>
 
             <section class="content">
+                <div class="d-flex justify-content-between mb-3">
+                    <!-- 🔍 Search -->
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" class="form-control me-2" placeholder="Search announcements...">
+                        <button type="submit" class="btn btn-dark">Search</button>
+                    </form>
+
+                    <!-- 🔽 Show # entries -->
+                    <form method="GET" class="d-flex align-items-center">
+                        <label class="me-2 my-auto">Show</label>
+                        <select name="limit" class="form-select me-3" style="width: 60px;" onchange="this.form.submit()">
+                            <option value="5" <?= $limit == 5 ? 'selected' : '' ?>>5</option>
+                            <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10</option>
+                            <option value="25" <?= $limit == 25 ? 'selected' : '' ?>>25</option>
+                            <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50</option>
+                        </select>
+                        <label class="my-auto">entries</label>
+                        <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
+                    </form>
+
+                </div>
+
                 <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <!-- Hide the announcement list title -->
-                        <h3 class="card-title mb-0"></h3>
-                    </div>
                     <div class="card-body">
-                        <!-- Controls wrapper -->
-                        <div class="dt-controls">
-                            <button id="btnAddAnnouncement" class="btn btn-success">
-                                <i class="fas fa-plus-circle"></i> Add Announcement
-                            </button>
-                            <!-- The search bar will be placed by DataTables -->
-                        </div>
-                        <table id="announcementsTable" class="table table-bordered table-hover dt-responsive nowrap" style="width:100%">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th style="width: 5%;">ID</th>
-                                    <th style="width: 25%;">Title</th>
-                                    <th>Description</th>
-                                    <th style="width: 20%;">Image</th>
-                                    <th style="width: 15%;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($announcement = mysqli_fetch_assoc($result)) : ?>
-                                    <tr data-id="<?= $announcement['id'] ?>" data-title="<?= htmlspecialchars($announcement['title'], ENT_QUOTES) ?>" data-description="<?= htmlspecialchars($announcement['description'], ENT_QUOTES) ?>" data-image_path="<?= $announcement['image_path'] ?>">
-                                        <td><?= $announcement['id'] ?></td>
-                                        <td><?= htmlspecialchars($announcement['title']) ?></td>
-                                        <td><?= nl2br(htmlspecialchars($announcement['description'])) ?></td>
-                                        <td>
-                                            <?php if ($announcement['image_path'] && file_exists($announcement['image_path'])) : ?>
-                                                <img src="<?= $announcement['image_path'] ?>" alt="Image" class="announcement-img">
-                                            <?php else : ?>
-                                                <span class="text-muted">No Image</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-primary btn-sm btn-action btnUpdate" title="Update"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-danger btn-sm btn-action btnDelete" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                                        </td>
+                        <div class="table-responsive">
+                            <div id="alertBox"></div>
+
+                            <table id="announcementsTable" class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width:25%;">Title</th>
+                                        <th>Description</th>
+                                        <th style="width:20%;">Image</th>
+                                        <th style="width:15%;">Actions</th>
                                     </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <?php while ($announcement = mysqli_fetch_assoc($result)) : ?>
+                                        <tr data-id="<?= $announcement['id'] ?>"
+                                            data-title="<?= htmlspecialchars($announcement['title'], ENT_QUOTES) ?>"
+                                            data-description="<?= htmlspecialchars($announcement['description'], ENT_QUOTES) ?>"
+                                            data-image_path="<?= $announcement['image_path'] ?>">
+
+                                            <td><?= htmlspecialchars($announcement['title']) ?></td>
+                                            <td><?= nl2br(htmlspecialchars($announcement['description'])) ?></td>
+                                            <td>
+                                                <?php if ($announcement['image_path'] && file_exists($announcement['image_path'])) : ?>
+                                                    <img src="<?= $announcement['image_path'] ?>" alt="Image" class="announcement-img">
+                                                <?php else : ?>
+                                                    <span class="text-muted">No Image</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-primary btn-sm btn-action btnUpdate"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-danger btn-sm btn-action btnDelete"><i class="fas fa-trash-alt"></i></button>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+
+                            <!-- 🔽 Pagination -->
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                        <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $page - 1 ?>">Previous</a>
+                                    </li>
+                                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                        <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                            <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $i ?>"><?= $i ?></a>
+                                        </li>
+                                    <?php endfor; ?>
+                                    <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                                        <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $page + 1 ?>">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+
+
+
+                        </div>
                     </div>
                 </div>
             </section>
         </div>
+        <!-- Add Announcement Modal -->
+        <div class="modal fade" id="addAnnouncementModal" tabindex="-1" aria-labelledby="addAnnouncementLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="addAnnouncementForm" enctype="multipart/form-data">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addAnnouncementLabel">Add Announcement</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea name="description" class="form-control" rows="4"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Image</label>
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Announcement Modal -->
+        <div class="modal fade" id="editAnnouncementModal" tabindex="-1" aria-labelledby="editAnnouncementLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editAnnouncementForm" enctype="multipart/form-data">
+                        <input type="hidden" name="id">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editAnnouncementLabel">Edit Announcement</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea name="description" class="form-control" rows="4"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Current Image</label><br>
+                                <img id="currentImage" src="" alt="No Image" style="max-width:120px; max-height:90px;">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Change Image</label>
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Delete Announcement Modal -->
+        <div class="modal fade" id="deleteAnnouncementModal" tabindex="-1" aria-labelledby="deleteAnnouncementLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteAnnouncementLabel">Confirm Delete</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this announcement? This action cannot be undone.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <?php include 'footer.php'; ?>
     </div>
@@ -260,263 +339,131 @@ $result = mysqli_query($conn, "SELECT * FROM announcements ORDER BY id DESC");
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         $(document).ready(function() {
-            // Initialize DataTable with responsive support
-            var table = $('#announcementsTable').DataTable({
-                responsive: true,
-                paging: true,
-                pageLength: 10,
-                lengthChange: false,
-                info: false,
-                searching: true,
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Search announcements..."
-                },
-                dom: "<'dt-controls'<'#btnAddWrapper'>f>" + // custom div for button and search
-                    "rt" +
-                    "ip"
+            // ✅ Show success/error message after reload
+            if (localStorage.getItem("flashMessage")) {
+                $("#alertBox").html(`
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ${localStorage.getItem("flashMessage")}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+                localStorage.removeItem("flashMessage");
+            }
+
+            // 🔍 Search filter
+            $("#searchInput").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#announcementsTable tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
             });
 
-            // Move Add Announcement button into custom div
-            $('#btnAddAnnouncement').appendTo('#btnAddWrapper');
+            // 🟢 Add Announcement (open modal)
+            $("#btnAddAnnouncement").on("click", function() {
+                $("#addAnnouncementModal").modal("show");
+            });
 
-            // Add Announcement
-            $('#btnAddAnnouncement').on('click', function() {
-                Swal.fire({
-                    title: 'Add Announcement',
-                    html: `<input type="text" id="swal-input1" class="swal2-input" placeholder="Title" required>` +
-                        `<textarea id="swal-input2" class="swal2-textarea" placeholder="Description (optional)"></textarea>` +
-                        `<input type="file" id="swal-input3" class="swal2-file" accept="image/*" style="margin-top:10px;">`,
-                    focusConfirm: false,
-                    showCancelButton: true,
-                    confirmButtonText: 'Submit',
-                    preConfirm: () => {
-                        const title = Swal.getPopup().querySelector('#swal-input1').value.trim();
-                        const description = Swal.getPopup().querySelector('#swal-input2').value.trim();
-                        const imageFile = Swal.getPopup().querySelector('#swal-input3').files[0];
+            // Handle Add Form Submit
+            $("#addAnnouncementForm").on("submit", function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+                formData.append('action', 'add_announcement');
 
-                        if (!title) {
-                            Swal.showValidationMessage('Title is required');
-                            return false;
-                        }
-
-                        return {
-                            title: title,
-                            description: description,
-                            imageFile: imageFile
-                        };
+                $.ajax({
+                    url: '',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        $("#addAnnouncementModal").modal("hide");
+                        localStorage.setItem("flashMessage", "✅ Announcement added successfully!");
+                        location.reload();
                     },
-                    didOpen: () => {
-                        Swal.getPopup().querySelector('#swal-input1').focus();
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        let formData = new FormData();
-                        formData.append('action', 'add_announcement');
-                        formData.append('title', result.value.title);
-                        formData.append('description', result.value.description);
-                        if (result.value.imageFile) {
-                            formData.append('image', result.value.imageFile);
-                        }
 
-                        Swal.fire({
-                            title: 'Adding announcement...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
-                        $.ajax({
-                            url: '',
-                            method: 'POST',
-                            data: formData,
-                            processData: false,
-                            contentType: false,
-                            success: function(response) {
-                                Swal.close();
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: 'Announcement added successfully.',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                Swal.close();
-                                let errMsg = 'An error occurred.';
-                                try {
-                                    let res = JSON.parse(xhr.responseText);
-                                    if (res.error) errMsg = res.error;
-                                } catch {}
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Oops...',
-                                    text: errMsg
-                                });
-                            }
-                        });
+                    error: function(xhr) {
+                        alert("Error: " + xhr.responseText);
                     }
                 });
             });
 
-            // Update Announcement
-            $('#announcementsTable').on('click', '.btnUpdate', function() {
+            // ✏️ Update Announcement (open modal with data)
+            $("#announcementsTable").on("click", ".btnUpdate", function() {
                 const tr = $(this).closest('tr');
                 const id = tr.data('id');
                 const title = tr.data('title');
                 const description = tr.data('description');
                 const image_path = tr.data('image_path');
 
-                Swal.fire({
-                    title: 'Update Announcement',
-                    html: `<input type="text" id="swal-input1" class="swal2-input" placeholder="Title" required value="${title}">` +
-                        `<textarea id="swal-input2" class="swal2-textarea" placeholder="Description (optional)">${description}</textarea>` +
-                        `<div style="margin-top:10px;">
-                            <label>Current Image:</label><br>` +
-                        (image_path ? `<img src="${image_path}" alt="Current Image" style="max-width:100px; max-height:80px; border-radius:6px; margin-bottom:10px;">` : '<span class="text-muted">No Image</span>') +
-                        `</div>` +
-                        `<input type="file" id="swal-input3" class="swal2-file" accept="image/*" style="margin-top:10px;">`,
-                    focusConfirm: false,
-                    showCancelButton: true,
-                    confirmButtonText: 'Update',
-                    preConfirm: () => {
-                        const newTitle = Swal.getPopup().querySelector('#swal-input1').value.trim();
-                        const newDesc = Swal.getPopup().querySelector('#swal-input2').value.trim();
-                        const imageFile = Swal.getPopup().querySelector('#swal-input3').files[0];
+                $("#editAnnouncementForm [name=id]").val(id);
+                $("#editAnnouncementForm [name=title]").val(title);
+                $("#editAnnouncementForm [name=description]").val(description);
 
-                        if (!newTitle) {
-                            Swal.showValidationMessage('Title is required');
-                            return false;
-                        }
+                if (image_path) {
+                    $("#currentImage").attr("src", image_path).show();
+                } else {
+                    $("#currentImage").attr("src", "").hide();
+                }
 
-                        return {
-                            id: id,
-                            title: newTitle,
-                            description: newDesc,
-                            imageFile: imageFile
-                        };
+                $("#editAnnouncementModal").modal("show");
+            });
+
+            // Handle Update Form Submit
+            $("#editAnnouncementForm").on("submit", function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+                formData.append('action', 'update_announcement');
+
+                $.ajax({
+                    url: '',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        $("#editAnnouncementModal").modal("hide");
+                        localStorage.setItem("flashMessage", "✏️ Announcement updated successfully!");
+                        location.reload();
                     },
-                    didOpen: () => {
-                        Swal.getPopup().querySelector('#swal-input1').focus();
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        let formData = new FormData();
-                        formData.append('action', 'update_announcement');
-                        formData.append('id', result.value.id);
-                        formData.append('title', result.value.title);
-                        formData.append('description', result.value.description);
-                        if (result.value.imageFile) {
-                            formData.append('image', result.value.imageFile);
-                        }
 
-                        Swal.fire({
-                            title: 'Updating announcement...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
-                        $.ajax({
-                            url: '',
-                            method: 'POST',
-                            data: formData,
-                            processData: false,
-                            contentType: false,
-                            success: function(response) {
-                                Swal.close();
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: 'Announcement updated successfully.',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                Swal.close();
-                                let errMsg = 'An error occurred.';
-                                try {
-                                    let res = JSON.parse(xhr.responseText);
-                                    if (res.error) errMsg = res.error;
-                                } catch {}
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Oops...',
-                                    text: errMsg
-                                });
-                            }
-                        });
+                    error: function(xhr) {
+                        alert("Error: " + xhr.responseText);
                     }
                 });
             });
 
-            // Delete Announcement
-            $('#announcementsTable').on('click', '.btnDelete', function() {
-                const tr = $(this).closest('tr');
-                const id = tr.data('id');
+            // 🗑️ Delete Announcement (open modal)
+            let deleteId = null;
+            $("#announcementsTable").on("click", ".btnDelete", function() {
+                deleteId = $(this).closest('tr').data('id');
+                $("#deleteAnnouncementModal").modal("show");
+            });
 
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This will delete the announcement permanently.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: '',
-                            method: 'POST',
-                            data: {
-                                action: 'delete_announcement',
-                                id: id
-                            },
-                            success: function(response) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted!',
-                                    text: 'Announcement has been deleted.',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                let errMsg = 'An error occurred.';
-                                try {
-                                    let res = JSON.parse(xhr.responseText);
-                                    if (res.error) errMsg = res.error;
-                                } catch {}
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Oops...',
-                                    text: errMsg
-                                });
-                            }
-                        });
+            // Confirm Delete
+            $("#confirmDeleteBtn").on("click", function() {
+                if (!deleteId) return;
+                $.ajax({
+                    url: '',
+                    method: 'POST',
+                    data: {
+                        action: 'delete_announcement',
+                        id: deleteId
+                    },
+                    success: function() {
+                        $("#deleteAnnouncementModal").modal("hide");
+                        localStorage.setItem("flashMessage", "🗑️ Announcement deleted successfully!");
+                        location.reload();
+                    },
+
+                    error: function(xhr) {
+                        alert("Error: " + xhr.responseText);
                     }
                 });
             });
 
         });
     </script>
+
 </body>

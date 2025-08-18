@@ -68,6 +68,26 @@ $totalPages = ceil($totalRows / $limit);
         .content-wrapper {
             padding: 20px;
         }
+
+        .table thead th {
+            background: linear-gradient(90deg, #01255cff, #024d5cff);
+            color: #fff !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+            border: none;
+        }
+
+
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f1f9ff;
+            transition: background-color 0.3s ease;
+        }
     </style>
 </head>
 
@@ -99,8 +119,8 @@ $totalPages = ceil($totalRows / $limit);
 
                 <?php if (count($staffs) > 0): ?>
                     <div class="table-responsive">
-                        <table class="table table-bordered align-middle">
-                            <thead class="table-light">
+                        <table class="table table-striped table-hover align-middle shadow-sm rounded">
+                            <thead class="table-header">
                                 <tr>
                                     <th>Role</th>
                                     <th>Username</th>
@@ -111,6 +131,7 @@ $totalPages = ceil($totalRows / $limit);
                                     <th>Email</th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 <?php foreach ($staffs as $row): ?>
                                     <?php
@@ -139,16 +160,37 @@ $totalPages = ceil($totalRows / $limit);
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                    <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $i ?>"><?= $i ?></a>
+                    <div class="d-flex justify-content-center mt-3">
+                        <nav>
+                            <ul class="pagination mb-0">
+                                <!-- Previous -->
+                                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $page - 1 ?>">Previous</a>
                                 </li>
-                            <?php endfor; ?>
-                        </ul>
-                    </nav>
+
+                                <?php
+                                $maxVisible = 5;
+                                $start = max(1, $page - floor($maxVisible / 2));
+                                $end = min($totalPages, $start + $maxVisible - 1);
+                                if ($end - $start < $maxVisible - 1) {
+                                    $start = max(1, $end - $maxVisible + 1);
+                                }
+
+                                for ($i = $start; $i <= $end; $i++): ?>
+                                    <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                        <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $i ?>"><?= $i ?></a>
+                                    </li>
+                                <?php endfor; ?>
+
+                                <!-- Next -->
+                                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?search=<?= urlencode($search) ?>&limit=<?= $limit ?>&page=<?= $page + 1 ?>">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+
                 <?php else: ?>
                     <p class="text-muted text-center">No staff found.</p>
                 <?php endif; ?>

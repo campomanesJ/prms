@@ -150,7 +150,7 @@ if (isset($_SESSION['login_userid'])) {
                         href="https://web.facebook.com/superjansnoww"
                         target="_blank"
                         rel="noopener noreferrer"
-                        style="text-decoration: underline; color: white;">BULALA BOYZ</a>
+                        style="text-decoration: underline; color: white;">J&J BOYZ</a>
                 </p>
             </div>
         </footer>
