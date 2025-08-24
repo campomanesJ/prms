@@ -28,22 +28,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
     if ($search !== '') {
         switch ($type) {
             case 'baptism':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no 
                         FROM baptism_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'confirmation':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, birthdate, book_no, page_no 
                         FROM confirmation_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'death':
-                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, 'None' AS birthdate, book_no, page_no
+                $sql = "SELECT CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) AS name, 'None' AS birthdate, book_no, page_no 
                         FROM death_tbl 
                         WHERE CONCAT(COALESCE(firstname, ''), ' ', COALESCE(middlename, ''), ' ', COALESCE(lastname, '')) LIKE ?";
                 break;
             case 'marriage':
-                $sql = "SELECT COALESCE(husband_name, '') AS name, husband_birthdate AS birthdate, book_no, page_no
+                $sql = "SELECT COALESCE(husband_name, '') AS name, husband_birthdate AS birthdate, book_no, page_no 
                         FROM marriage_tbl 
                         WHERE COALESCE(husband_name, '') LIKE ?";
                 break;
@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -76,22 +75,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-
     <style>
         body,
         html {
             height: 100%;
             margin: 0;
             font-family: 'Poppins', sans-serif;
-            background:
-                linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
                 url('assets/img/church.jpg') center center / cover no-repeat fixed;
         }
 
-
-
         .overlay-container {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -100,17 +95,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
         .content-below-navbar {
             padding: 80px 15px 2rem 15px;
         }
+
+        @media (max-width: 768px) {
+            .navbar-brand span {
+                font-size: 1rem;
+            }
+
+            .navbar-brand small {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fs-4" href="index.php">
                 <img src="assets/img/loginlogo.png" alt="Logo" height="40" class="me-3" />
                 <div class="d-flex flex-column lh-1">
                     <span>St. Joseph Parish</span>
-                    <small class="text-white-50" style="font-size: 0.85rem; margin-top: 4px;">Matalom, Leyte</small>
+                    <small class="text-white-50" style="margin-top: 4px;">Matalom, Leyte</small>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -128,11 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
         </div>
     </nav>
 
-
+    <!-- Content -->
     <div class="container mt-5 pt-5 overlay-container content-below-navbar">
-
         <form method="GET" class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <select name="type" class="form-select" required>
                     <option value="">Select Record Type</option>
                     <option value="baptism" <?= $type == 'baptism' ? 'selected' : '' ?>>Baptism</option>
@@ -141,36 +146,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
                     <option value="marriage" <?= $type == 'marriage' ? 'selected' : '' ?>>Marriage</option>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" class="form-control" placeholder="Search by name...">
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="fas fa-search me-1"></i> Search
                 </button>
             </div>
         </form>
+
         <?php if ($type && count($records)): ?>
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Birthdate</th>
-                        <th>Book No</th>
-                        <th>Page No</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($records as $rec): ?>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
                         <tr>
-                            <td><?= htmlspecialchars(maskName($rec['name'])) ?></td>
-                            <td><?= htmlspecialchars($rec['birthdate']) ?></td>
-                            <td><?= htmlspecialchars($rec['book_no']) ?></td>
-                            <td><?= htmlspecialchars($rec['page_no']) ?></td>
+                            <th>Name</th>
+                            <th>Birthdate</th>
+                            <th>Book No</th>
+                            <th>Page No</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($records as $rec): ?>
+                            <tr>
+                                <td><?= htmlspecialchars(maskName($rec['name'])) ?></td>
+                                <td><?= htmlspecialchars($rec['birthdate']) ?></td>
+                                <td><?= htmlspecialchars($rec['book_no']) ?></td>
+                                <td><?= htmlspecialchars($rec['page_no']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php elseif ($type && $search !== ''): ?>
             <div class="alert alert-warning">No records found.</div>
         <?php elseif ($type && $search === ''): ?>
@@ -179,8 +187,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['type']) && $_GET['type'
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
 </body>
 
 </html>

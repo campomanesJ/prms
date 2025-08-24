@@ -137,12 +137,60 @@ $result = mysqli_query($conn, $sql);
         max-height: 90px;
         border-radius: 6px;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        /* 👈 make it clear it's clickable */
+        transition: transform 0.2s;
+    }
+
+    img.announcement-img:hover {
+        transform: scale(1.05);
     }
 
     .btn-action {
         margin: 0 2px;
     }
+
+    /* ================================
+       Fullscreen Image Modal Styles
+    ================================= */
+    .img-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        padding-top: 60px;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .img-modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .img-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .img-modal-close:hover {
+        color: #ccc;
+    }
 </style>
+
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
@@ -328,6 +376,12 @@ $result = mysqli_query($conn, $sql);
                 </div>
             </div>
         </div>
+        <!-- Fullscreen Image Modal -->
+        <div id="imgModal" class="img-modal">
+            <span class="img-modal-close">&times;</span>
+            <img class="img-modal-content" id="modalImage">
+        </div>
+
 
 
         <?php include 'footer.php'; ?>
@@ -344,11 +398,11 @@ $result = mysqli_query($conn, $sql);
             // ✅ Show success/error message after reload
             if (localStorage.getItem("flashMessage")) {
                 $("#alertBox").html(`
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${localStorage.getItem("flashMessage")}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `);
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    ${localStorage.getItem("flashMessage")}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
                 localStorage.removeItem("flashMessage");
             }
 
@@ -382,7 +436,6 @@ $result = mysqli_query($conn, $sql);
                         localStorage.setItem("flashMessage", "✅ Announcement added successfully!");
                         location.reload();
                     },
-
                     error: function(xhr) {
                         alert("Error: " + xhr.responseText);
                     }
@@ -427,7 +480,6 @@ $result = mysqli_query($conn, $sql);
                         localStorage.setItem("flashMessage", "✏️ Announcement updated successfully!");
                         location.reload();
                     },
-
                     error: function(xhr) {
                         alert("Error: " + xhr.responseText);
                     }
@@ -456,14 +508,34 @@ $result = mysqli_query($conn, $sql);
                         localStorage.setItem("flashMessage", "🗑️ Announcement deleted successfully!");
                         location.reload();
                     },
-
                     error: function(xhr) {
                         alert("Error: " + xhr.responseText);
                     }
                 });
             });
 
+            // 🖼️ Fullscreen Image Viewer
+            $("#announcementsTable").on("click", ".announcement-img", function() {
+                $("#modalImage").attr("src", $(this).attr("src"));
+                $("#imgModal").fadeIn();
+            });
+
+            // ❌ Close fullscreen (X button or clicking outside image)
+            $(".img-modal-close, #imgModal").on("click", function(e) {
+                if (e.target !== $("#modalImage")[0]) {
+                    $("#imgModal").fadeOut();
+                }
+            });
+
+            // ⌨️ Close on ESC key
+            $(document).on("keydown", function(e) {
+                if (e.key === "Escape") {
+                    $("#imgModal").fadeOut();
+                }
+            });
+
         });
     </script>
+
 
 </body>

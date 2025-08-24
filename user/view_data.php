@@ -124,8 +124,6 @@ function formatColumnName($column)
                             <nav class="d-flex justify-content-center mt-1">
                                 <ul class="pagination mb-0" data-table-id="<?= $tableId ?>"></ul>
                             </nav>
-
-
                         </div>
                     <?php $isFirst = false;
                     endforeach; ?>
@@ -148,6 +146,7 @@ function formatColumnName($column)
                         <input type="hidden" name="table" id="editTableName">
                         <input type="hidden" name="id" id="editRecordId">
                         <button type="submit" class="btn btn-primary">Update</button>
+                        <button type="button" class="btn btn-success" id="generatePdfBtn">PDF</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -227,24 +226,20 @@ function formatColumnName($column)
                 data.forEach(row => {
                     const tr = document.createElement('tr');
 
-                    // Action buttons
+                    // Action buttons (Edit + Delete only)
                     let actions = `
         <td>
             <div class='d-flex gap-1'>
                 <button class='btn btn-sm btn-warning edit-btn' 
                         data-id='${row.id}' 
                         data-table='${tableName}' 
-                        data-record='${JSON.stringify(row).replace(/'/g, "&apos;")}'}>
+                        data-record='${JSON.stringify(row).replace(/'/g, "&apos;")}'}'>
                     Edit
                 </button>
                 <button class='btn btn-sm btn-danger delete-btn' 
                         data-id='${row.id}' 
                         data-table='${tableName}'>
                     Delete
-                </button>
-                <button class='btn btn-sm btn-success generate-cert-btn' 
-                        data-id='${row.id}'>
-                    PDF
                 </button>
             </div>
         </td>`;
@@ -260,7 +255,6 @@ function formatColumnName($column)
                     tbody.appendChild(tr);
                 });
             }
-
 
             function renderPagination(total) {
                 pagination.innerHTML = '';
@@ -279,7 +273,6 @@ function formatColumnName($column)
                 });
                 pagination.appendChild(prevLi);
 
-                // Page numbers (you can limit range if many pages)
                 const maxVisiblePages = 5;
                 let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -313,8 +306,6 @@ function formatColumnName($column)
                 pagination.appendChild(nextLi);
             }
 
-
-            // Event listeners
             searchInput.addEventListener("input", function() {
                 searchTerm = this.value;
                 currentPage = 1;
@@ -330,9 +321,7 @@ function formatColumnName($column)
             fetchData();
         }
 
-
         document.addEventListener("DOMContentLoaded", function() {
-            // Setup tables with server-side pagination
             setupServerTable('baptism_table', 'baptism_tbl');
             setupServerTable('confirmation_table', 'confirmation_tbl');
             setupServerTable('death_table', 'death_tbl');
@@ -417,15 +406,33 @@ function formatColumnName($column)
                 });
             });
 
-            // PDF button
-            $(document).on('click', '.generate-cert-btn', function() {
-                Swal.fire({
-                    title: 'Placeholder',
-                    text: 'This is a placeholder for generating certificates.',
-                    icon: 'info',
-                    confirmButtonText: 'OK'
-                });
+            // PDF button inside modal
+            $('#generatePdfBtn').on('click', function() {
+                const id = $('#editRecordId').val();
+                const table = $('#editTableName').val();
+
+                let certPage = '';
+                switch (table) {
+                    case 'baptism_tbl':
+                        certPage = 'certificate/baptism_certificate.php';
+                        break;
+                    case 'confirmation_tbl':
+                        certPage = 'certificate/confirmation_certificate.php';
+                        break;
+                    case 'death_tbl':
+                        certPage = 'certificate/death_certificate.php';
+                        break;
+                    case 'marriage_tbl':
+                        certPage = 'certificate/marriage_certificate.php';
+                        break;
+                    default:
+                        Swal.fire('Error', 'Unknown table: ' + table, 'error');
+                        return;
+                }
+
+                window.open(`${certPage}?id=${id}`, '_blank');
             });
+
         });
     </script>
 </body>
